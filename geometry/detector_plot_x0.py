@@ -13,7 +13,7 @@ mkdir data
 mkdir exports-detector-plots
 
 Put all the root files in "data" and run this program from within "exports-detector-plots" as
-python detector_plot_x0.py
+python detector_plot_x0.py --inputDir="../data/"
 """
 
 
@@ -31,11 +31,11 @@ def parse_tree(tree, eta_max, eta_bin):
 
     # go through the eta bins and fill the histograms in the histDict, skipping air
     for etaBin, entry in enumerate(tree):
-        print(f"loop over tree: etaBin = {etaBin}")
+        # print(f"loop over tree: etaBin = {etaBin}")
         nMat = entry.nMaterials
         for i in range(nMat):
-            print(f"loop over nMat, i = {i}")
-            print(f"material = {entry.material.at(i)}")
+            # print(f"loop over nMat, i = {i}")
+            # print(f"material = {entry.material.at(i)}")
 
             if entry.material.at(i) == "Air":
                 continue
@@ -55,12 +55,12 @@ def parse_tree(tree, eta_max, eta_bin):
                 + entry.matDepth.at(i),
             )
 
-            print(hist_dict_combined)
+            # print(hist_dict_combined)
 
     return hist_dict_combined
 
 
-def extract_material_from_all_root(file_list, eta_max, eta_bin):
+def extract_material_from_all_root(file_list, eta_max, eta_bin, input_dir=""):
     """
     Loops over all provided root files and extracts all info
     """
@@ -68,6 +68,7 @@ def extract_material_from_all_root(file_list, eta_max, eta_bin):
     hist_dict = {}
 
     for filename in file_list:
+        filename = input_dir + filename + ".root"
         f = ROOT.TFile.Open(filename, "read")
         tree = f.Get("materials")
 
@@ -78,14 +79,6 @@ def extract_material_from_all_root(file_list, eta_max, eta_bin):
 
 def main():
     parser = argparse.ArgumentParser(description="Material Plotter")
-    parser.add_argument(
-        "--fname",
-        "-f",
-        dest="fname",
-        default="drift.root",
-        type=str,
-        help="name of file to read",
-    )
     parser.add_argument(
         "--etaMax",
         "-m",
@@ -102,25 +95,30 @@ def main():
         type=float,
         help="pseudorapidity bin width",
     )
+    parser.add_argument(
+        "--inputDir",
+        "-i",
+        dest="inputDir",
+        default="",
+        type=str,
+        help="path to the input root files",
+    )
     args = parser.parse_args()
 
-    print(
-        "WARNING the argument '--fname' is always ignored. Fall back to internal list."
-    )
-
+    input_dir = args.inputDir
     file_list = (
-        "../data/beaminstrum.root",
-        "../data/beampipe.root",
-        "../data/drift.root",
-        "../data/homabs.root",
-        "../data/LumiCal.root",
-        "../data/vertex.root",
+        "beaminstrum",
+        "beampipe",
+        "homabs",
+        "LumiCal",
+        "vertex",
+        "drift",
     )
 
     eta_max = args.etaMax
     eta_bin = args.etaBin
 
-    hist_dict = extract_material_from_all_root(file_list, eta_max, eta_bin)
+    hist_dict = extract_material_from_all_root(file_list, eta_max, eta_bin, input_dir)
 
     axis_titles = ["Number of X_{0}", "Number of #lambda", "Material depth [cm]"]
 
@@ -129,8 +127,8 @@ def main():
         legend = ROOT.TLegend(0.75, 0.75, 0.94, 0.94)
         legend.SetLineColor(0)
         ths = ROOT.THStack()
-        print("histDict VOR dem 2. loop")
-        print(hist_dict)
+        # print("histDict VOR dem 2. loop")
+        # print(hist_dict)
         for i, material in enumerate(hist_dict.keys()):
             linecolor = 1
             if i >= len(FCCStyle.fillcolors):
@@ -142,31 +140,31 @@ def main():
             hist_dict[material][plot].SetLineWidth(1)
             hist_dict[material][plot].SetFillStyle(1001)
 
-            print("histDict")
-            # print(histDict)
-            print(hist_dict[material][plot])
+            # print("histDict")
+            # print(hist_dict[material][plot])
 
             ths.Add(hist_dict[material][plot])
-            # legend.AddEntry(hist_dict[material][plot], material, "f")
+            legend_name = file_list[i]
+            legend.AddEntry(hist_dict[material][plot], legend_name, "f")
 
         ths.SetMaximum(1.5 * ths.GetMaximum())
-        print("print(ths.GetMaximum())")
-        print(print(ths.GetMaximum()))
+        # print("print(ths.GetMaximum())")
+        # print(print(ths.GetMaximum()))
         cv = ROOT.TCanvas()
         ths.Draw()
-        print("next line ths")
-        print(ths.GetXaxis())
+        # print("next line ths")
+        # print(ths.GetXaxis())
         ths.GetXaxis().SetTitle("#eta")
-        print(ths.GetXaxis())
+        # print(ths.GetXaxis())
         ths.GetYaxis().SetTitle(title)
 
         legend.Draw()
-        # cv.Print(plot + ".pdf")
-        cv.Print(plot + "_mod.png")
+        # cv.Print(plot + "_detector.pdf")
+        cv.Print(plot + "_detector.png")
 
         # ths.GetXaxis().SetRangeUser(0, args.etaMax)
-        # cv.Print(plot + "pos.pdf")
-        # cv.Print(plot + "pos.png")
+        # cv.Print(plot + "pos_detector.pdf")
+        # cv.Print(plot + "pos_detector.png")
 
 
 if __name__ == "__main__":
